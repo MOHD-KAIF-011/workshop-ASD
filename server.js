@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+const cache={}
 
 
 // Helper function to read products
@@ -18,27 +19,28 @@ const getProductsData = async () => {
 
     return JSON.parse(rawData);
 };
+app.get('/products', async (req, res) => {
+  try {
+    let key = req.url;
+    let value = cache[key];
+
+    if (value) {
+      console.log(`Serving from cache for key: ${key}`);
+      return res.json(value);
+    }
+
+    const products = await getProductsData();
+    cache[key] = products;
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read products data' });
+  }
+});
 
 
 // GET /products
 // Get all products
-app.get("/products", async (req, res) => {
 
-    try {
-
-        const products = await getProductsData();
-
-        res.json(products);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            error: "Failed to read products data"
-        });
-    }
-});
 
 
 // GET /products/:id
